@@ -1,9 +1,10 @@
 import {Shell as _Shell} from 'xeue-shell';
 
 export default class AP {
-	constructor(Logs) {
+	constructor(Logs, sudo = false) {
     this.Logs = Logs;
-    this.exec = new _Shell(this.Logs, 'NETWRK', 'W', 'bash').run;
+    this.Shell = new _Shell(this.Logs, 'NETWRK', 'W', 'bash');
+    this.sudo = sudo ? 'sudo ' : '';
   }
 
   async enable(options) {
@@ -12,14 +13,14 @@ export default class AP {
     Object.getOwnPropertyNames(options).forEach(key => {
       commands.push(key + '=' + options[key]);
     });
-    const {stdout} = await this.exec(commands.join('\n'));
-    return stdout;
+    const {stdout} = await this.Shell.run(this.sudo+commands.join('\n'), false);
+    return stdout[0];
   }
 
-  async disable(interface) {
-    const file = interface + '-hostapd.conf';
-    const {stdout} = await this.exec('kill `pgrep -f "^hostapd -B ' + file + '"` || true');
-    return stdout;
+  async disable(iface) {
+    const file = iface + '-hostapd.conf';
+    const {stdout} = await this.Shell.run(this.sudo+'kill `pgrep -f "^hostapd -B ' + file + '"` || true', false);
+    return stdout[0];
   }
 
   async startDHCP(options) {
@@ -28,14 +29,14 @@ export default class AP {
       'cat <<EOF >' + file + ' && udhcpd ' + file + ' && rm -f ' + file,
       this.#expand(options)
     );
-    const {stdout} = await this.exec(commands.join('\n'));
-    return stdout;
+    const {stdout} = await this.Shell.run(this.sudo+commands.join('\n'), false);
+    return stdout[0];
   }
 
-  async stopDHCP(interface, callback) {
-    const file = interface + '-udhcpd.conf';
-    const {stdout} = this.exec('kill `pgrep -f "^udhcpd ' + file + '"` || true', callback);
-    return stdout;
+  async stopDHCP(iface) {
+    const file = iface + '-udhcpd.conf';
+    const {stdout} = this.Shell.run(this.sudo+'kill `pgrep -f "^udhcpd ' + file + '"` || true', false);
+    return stdout[0];
   }
 
   #expand_r(options, lines, prefix) {

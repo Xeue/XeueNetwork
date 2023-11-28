@@ -1,9 +1,10 @@
 import {Shell as _Shell} from 'xeue-shell';
 
 export default class WiFi {
-	constructor(Logs) {
+	constructor(Logs, sudo = false) {
 		this.Logs = Logs;
-		this.exec = new _Shell(this.Logs, 'NETWRK', 'W', 'bash').run;
+		this.Shell = new _Shell(this.Logs, 'NETWRK', 'D', 'bash');
+		this.sudo = sudo ? 'sudo ' : '';
 	}
 
 	/*
@@ -34,9 +35,9 @@ export default class WiFi {
 	*/
 	async status(iface = '') {
 		const command =  iface == '' ? 'iwconfig' : `iwconfig ${iface}`;
-		const {stdout} = await this.exec(command);
-		if (iface == '') return this.#parse_status_block(stdout.trim());
-		else return this.#parse_status(stdout);
+		const {stdout} = await this.Shell.run(this.sudo+command, false);
+		if (iface == '') return this.#parse_status(stdout[0]);
+		else return [this.#parse_status_block(stdout[0].trim())];
 	}
 
 	/*
@@ -63,18 +64,10 @@ export default class WiFi {
 	*   }
 	* ]
 	*/
-	async scan(options) {
-		let interface, show_hidden
-		if (typeof options === 'string') {
-			interface = options;
-			show_hidden = false;
-		} else {
-			interface = options.iface;
-			show_hidden = options.show_hidden || false;
-		}
-		const extra_params = options.ssid ? ' essid ' + options.ssid : '';
-		const {stdout} = await this.exec('iwlist ' + interface + ' scan' + extra_params);
-		this.#parse_scan(stdout, show_hidden)
+	async scan(iface = '', show_hidden = false, ssid) {
+		const extra_params = ssid ? ' essid ' + ssid : '';
+		const {stdout} = await this.Shell.run(this.sudo+`iwlist ${iface} scan${extra_params}`, false);
+		return this.#parse_scan(stdout[0], show_hidden)
 	}
 
 	#has_ssid(network) {
@@ -211,6 +204,6 @@ export default class WiFi {
 	}
   
 	#parse_status(stdout) {
-		return stdout.trim().replace(/ {10,}/g, '').split('\n\n').map(parse_status_block).filter(function(i) { return !! i });
+		return stdout.trim().replace(/ {10,}/g, '').split('\n\n').map(this.#parse_status_block).filter(function(i) { return !! i });
 	}
 }

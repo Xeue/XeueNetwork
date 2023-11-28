@@ -20,16 +20,16 @@
  * SOFTWARE.
  *
  */
-import AP from './ap';
-import Iface from './iface';
-import WiFi from './wifi';
-import wpa from './wpa_cli';
-import wpa_supplicant from './wpa_supplicant';
+import AP from './ap.js';
+import Iface from './iface.js';
+import WiFi from './wifi.js';
+//import wpa from './wpa_cli.js';
+//import wpa_supplicant from './wpa_supplicant.js';
 
-module.exports = {
-  AP: AP,
-  Iface: Iface,
-  WiFi: WiFi,
-  wpa: wpa,
-  wpa_supplicant: wpa_supplicant
+export {
+  AP,
+  Iface,
+  WiFi
+//  wpa: wpa,
+//  wpa_supplicant: wpa_supplicant
 };

@@ -1,9 +1,13 @@
 import {Shell as _Shell} from 'xeue-shell';
+Object.prototype.forEach = function(callback) {for (const key in this) {
+	if (Object.hasOwnProperty.call(this, key)) callback.call(this, key, this[key]);
+}}
 
 export default class Iface {
-	constructor(Logs) {
+	constructor(Logs, sudo = false) {
     this.Logs = Logs;
-    this.exec = new _Shell(this.Logs, 'NETWRK', 'W', 'bash').run;
+    this.Shell = new _Shell(this.Logs, 'NETWRK', 'W', 'bash');
+    this.sudo = sudo ? 'sudo ' : '';
   }
 
   /*
@@ -44,30 +48,34 @@ export default class Iface {
   */
   async status(iface = '') {
     const command =  iface == '' ? 'ifconfig -a' : `ifconfig ${iface}`;
-    const {stdout} = await this.exec(command);
-    if (iface == '') return this.#parse_status_block(stdout.trim());
-    else return this.#parse_status(stdout);
+    const {stdout} = await this.Shell.run(this.sudo+command, false);
+    if (iface == '') return this.#parse_status(stdout[0]);
+    else return [this.#parse_status_block(stdout[0].trim())];
   }
 
   async down(iface) {
-    const {stdout} = await this.exec(`ifconfig ${iface} down`);
-    return stdout;
+    const {stdout} = await this.Shell.run(this.sudo+`ifconfig ${iface} down`, false);
+    return stdout[0];
   }
 
-  async up(options) {
-    const {stdout} = await this.exec(`ifconfig ${options.interface} ${options.address} netmask ${options.subnetMask} broadcast ${options.broadcast} up`);
-    return stdout;
+  async up(iface, options = {}) {
+    let optionsText = '';
+    options.forEach((option, value) => {
+      optionsText += option == 'address' ? value+' ' : `${option} ${value} `;
+    });
+    const {stdout} = await this.Shell.run(this.sudo+`ifconfig ${iface}${optionsText} up`, false);
+    return stdout[0];
   }
 
   async startDHCP(options) {
-    const {stdout} = this.exec('udhcpc -i ' + options.interface + ' -n');  
-    return stdout;
+    const {stdout} = this.Shell.run(this.sudo+'udhcpc -i ' + options.interface + ' -n', false);
+    return stdout[0];
   }
 
 
-  async stopDHCP(interface) {
-    const {stdout} = this.exec('kill `pgrep -f "^udhcpc -i ' + interface + '"` || true');  
-    return stdout;
+  async stopDHCP(iface) {
+    const {stdout} = this.Shell.run(this.sudo+'kill `pgrep -f "^udhcpc -i ' + iface + '"` || true', false);  
+    return stdout[0];
   }
   
   #parse_status_block(block) {
@@ -135,6 +143,10 @@ export default class Iface {
   }
 
   #parse_status(stdout) {
-    return stdout.trim().split('\n\n').map(this.#parse_status_block);
+    const ifaces = stdout.trim().split('\n\n').map(this.#parse_status_block);
+    ifaces.forEach(iface => {
+      if (iface.interface == 'lo') ifaces.splice(ifaces.indexOf(iface), 1);
+    });
+    return ifaces;
   }
 }
