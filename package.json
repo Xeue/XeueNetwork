@@ -1,11 +1,12 @@
 {
   "name": "xeue-network",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Wireless tools for Node.js",
   "author": "Christopher M. Baker",
   "license": "MIT",
   "homepage": "https://github.com/Xeue/XeueNetwork",
   "main": "network.js",
+  "type": "module",
   "keywords": [
     "wireless",
     "tools",
