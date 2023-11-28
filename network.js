@@ -20,15 +20,16 @@
  * SOFTWARE.
  *
  */
+import AP from './ap';
+import Iface from './iface';
+import WiFi from './wifi';
+import wpa from './wpa_cli';
+import wpa_supplicant from './wpa_supplicant';
 
-var wireless_tools = module.exports = {
-  hostapd: require('./hostapd'),
-  ifconfig: require('./ifconfig'),
-  iwconfig: require('./iwconfig'),
-  iwlist: require('./iwlist'),
-  iw: require('./iw'),
-  udhcpc: require('./udhcpc'),
-  udhcpd: require('./udhcpd'),
-  wpa: require('./wpa_cli'),
-  wpa_supplicant: require('./wpa_supplicant')
+module.exports = {
+  AP: AP,
+  Iface: Iface,
+  WiFi: WiFi,
+  wpa: wpa,
+  wpa_supplicant: wpa_supplicant
 };
