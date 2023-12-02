@@ -1,4 +1,5 @@
 import {Shell as _Shell} from 'xeue-shell';
+import os from 'os';
 
 export default class WiFi {
 	constructor(Logs, sudo = false) {
@@ -34,6 +35,7 @@ export default class WiFi {
 	* ]
 	*/
 	async status(iface = '') {
+		if (os.platform() !== 'linux') return {};
 		const command =  iface == '' ? 'iwconfig' : `iwconfig ${iface}`;
 		const {stdout} = await this.Shell.run(this.sudo+command, false);
 		if (iface == '') return this.#parse_status(stdout[0]);
@@ -65,6 +67,7 @@ export default class WiFi {
 	* ]
 	*/
 	async scan(iface = '', show_hidden = false, ssid) {
+		if (os.platform() !== 'linux') return {};
 		const extra_params = ssid ? ' essid ' + ssid : '';
 		const {stdout} = await this.Shell.run(this.sudo+`iwlist ${iface} scan${extra_params}`, false);
 		return this.#parse_scan(stdout[0], show_hidden)
