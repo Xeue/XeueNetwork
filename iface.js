@@ -109,6 +109,8 @@ export default class Iface extends EventEmitter {
     const messageArr = message.split('\n');
     messageArr.forEach(msg => {
       if (msg.includes('[ADDR]')) this.emit('addr');
+      if (msg.includes('state DOWN group default')) this.emit('state');
+      if (msg.includes('state UP group default')) this.emit('state');
     })
   }
 }
