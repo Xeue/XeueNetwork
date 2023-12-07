@@ -207,6 +207,7 @@ export default class WiFi {
 	}
   
 	#parse_status(stdout) {
+		if (!stdout) return;
 		return stdout.trim().replace(/ {10,}/g, '').split('\n\n').map(this.#parse_status_block).filter(function(i) { return !! i });
 	}
 }
