@@ -55,18 +55,22 @@ export default class Iface extends EventEmitter {
   * ]
   */
   async status(iface = '') {
-    const command =  iface == '' ? 'ip -j a' : `ip -j a s ${iface}`;
-    const {stdout} = await this.Shell.run(this.sudo+command, false);
-    const ifaces = JSON.parse(stdout.join(''));
-    const routesOut = await this.Shell.run(this.sudo+'ip -j r list', false);
-    const routes = JSON.parse(routesOut.stdout.join('')).filter(route=>route.dst=='default');
-    const routesDev = routes.map(route=>route.dev);
-    ifaces.forEach(iface => {
-      if (routesDev.includes(iface.ifname)) {
-        iface.gateway = routes[routesDev.indexOf(iface.ifname)].gateway;
-      }
-    })
-    return ifaces;
+    try {      
+      const command =  iface == '' ? 'ip -j a' : `ip -j a s ${iface}`;
+      const {stdout} = await this.Shell.run(this.sudo+command, false);
+      const ifaces = JSON.parse(stdout.join(''));
+      const routesOut = await this.Shell.run(this.sudo+'ip -j r list', false);
+      const routes = JSON.parse(routesOut.stdout.join('')).filter(route=>route.dst=='default');
+      const routesDev = routes.map(route=>route.dev);
+      ifaces.forEach(iface => {
+        if (routesDev.includes(iface.ifname)) {
+          iface.gateway = routes[routesDev.indexOf(iface.ifname)].gateway;
+        }
+      })
+      return ifaces;
+    } catch (error) {
+      this.Logs.error(error);
+    }
   }
 
   async setIP(iface, addrObj) {
@@ -87,21 +91,25 @@ export default class Iface extends EventEmitter {
 
   async down(iface) {
     const {stdout} = await this.Shell.run(this.sudo+`ip link set dev ${iface} down`, false);
+    if (!stdout) return;
     return stdout[0];
   }
 
   async up(iface) {
     const {stdout} = await this.Shell.run(this.sudo+`ip link set dev ${iface} up`, false);
+    if (!stdout) return;
     return stdout[0];
   }
 
   async startDHCP(options) {
     const {stdout} = this.Shell.run(this.sudo+'udhcpc -i ' + options.interface + ' -n', false);
+    if (!stdout) return;
     return stdout[0];
   }
 
   async stopDHCP(iface) {
-    const {stdout} = this.Shell.run(this.sudo+'kill `pgrep -f "^udhcpc -i ' + iface + '"` || true', false);  
+    const {stdout} = this.Shell.run(this.sudo+'kill `pgrep -f "^udhcpc -i ' + iface + '"` || true', false);
+    if (!stdout) return;
     return stdout[0];
   }
 
