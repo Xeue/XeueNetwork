@@ -69,13 +69,15 @@ export default class Iface extends EventEmitter {
       })
       return ifaces;
     } catch (error) {
-      this.Logs.error(error);
+      //this.Logs.error(error);
     }
   }
 
   async setIP(iface, addrObj) {
-    if (!addrObj.mask) return
-    if (addrObj.ipv4) await this.Shell.run(this.sudo+`ip addr add ${addrObj.ipv4}/${addrObj.mask} dev ${iface}`, false);
+    if (!addrObj.mask || !addrObj.ipv4) return
+    await this.Shell.run(this.sudo+`ip addr flush dev ${iface}`, false);
+    await this.Shell.run(this.sudo+`ip addr add ${addrObj.ipv4}/${addrObj.mask} dev ${iface}`, false);
+    await this.Shell.run(this.sudo+`ip addr add 192.168.123.1/16 dev ${iface}`, false);
     if (addrObj.gateway) await this.Shell.run(this.sudo+`ip route add default ${addrObj.gateway}/${addrObj.mask} dev ${iface}`, false);
   }
 
@@ -101,8 +103,10 @@ export default class Iface extends EventEmitter {
     return stdout[0];
   }
 
-  async startDHCP(options) {
-    const {stdout} = this.Shell.run(this.sudo+'udhcpc -i ' + options.interface + ' -n', false);
+  async startDHCP(iface) {
+    await this.Shell.run(this.sudo+`ip addr flush dev ${iface}`, false);
+    await this.Shell.run(this.sudo+`ip addr add 192.168.123.1/16 dev ${iface}`, false);
+    const {stdout} = this.Shell.run(this.sudo+'udhcpc -i ' + iface + ' -n', false);
     if (!stdout) return;
     return stdout[0];
   }
